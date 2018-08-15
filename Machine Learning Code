@@ -1,3 +1,4 @@
+#import packages
 from root_numpy import root2array, tree2array, testdata, array2root, array2tree
 import scipy as sp
 import matplotlib.pyplot as plt
@@ -11,6 +12,9 @@ from sklearn.metrics import roc_curve, auc
 import ROOT
 from ROOT import gROOT
 np.random.seed(7)
+
+
+#extract information from ROOT TTrees
 file = testdata.get_filepath('out_train_PM.root')
 Xtrain = root2array(file, 'tree_train', branches = ['pointing_angle_var','decay_length_var','Drecon_dca_var','trx_dca_var','pk_dca_var1','pk_dca_var2','dca_angle_var','paths_area_var','pk_p_frac_var'])#
 Ytrain = root2array(file, 'tree_train', branches = 'validation_var')
@@ -31,18 +35,23 @@ for i in range(len(Y_test)):
     Y_test[i] = int(Ytest[i][0])
 Ztest = Ytest = root2array(file, 'tree_test', branches = ['efficiency_pass_var'])
 Ztest = Ytest.view(np.int32).reshape(Ytest.shape + (-1,))
+
+#create net
 model = Sequential()
 model.add(Dense(14, activation='relu', input_dim=7))
 model.add(Dense(8, activation='relu'))
 model.add(Dense(20, activation='relu'))
 model.add(Dense(8, activation='relu'))
 model.add(Dense(1, activation='sigmoid'))
+
+#train net
 model.compile(loss='binary_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
 history = model.fit(Xtrain, Y_train, validation_data=(Xtest,Y_test), epochs=100, batch_size=100, verbose=1)
 scores = model.evaluate(Xtest, Y_test)
+
+#print results for insight
 print("Error: %.2f%%" % (100-scores[1]*100))
 Ypred = model.predict(Xtest)
-
 for i in range(len(Xtest)):
     print("Actual=%i, Predicted=%i" % (Y_test[i], Ypred[i]))
     
